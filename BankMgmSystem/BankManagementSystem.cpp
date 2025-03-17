@@ -1,9 +1,7 @@
 #include <iostream>
 #include <string>
-#include <limits> // for numeric_limits
-#include <conio.h> // for getch()
-#include<ctime>
-#include<cstdlib>
+#include <limits>
+#include <conio.h>
 #define COLOR_GREEN "\033[32m"
 #define COLOR_YELLOW "\033[33m"
 #define COLOR_RESET "\033[0m"
