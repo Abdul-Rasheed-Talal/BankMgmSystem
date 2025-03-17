@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
 #include <limits> // for numeric_limits
-#include <cctype> // for isalpha and isdigit
 #include <conio.h> // for getch()
+#include<ctime>
+#include<cstdlib>
 #define COLOR_GREEN "\033[32m"
 #define COLOR_YELLOW "\033[33m"
 #define COLOR_RESET "\033[0m"
@@ -12,7 +13,7 @@ using namespace std;
 void wait_for_keypress() {
     cout << "Press Enter to continue...";
     getch();
-    system("clear");
+    system("cls");
 }
 int getValidInputForInt() {
     int input;
@@ -102,16 +103,13 @@ public:
         }
         return hasUpper && hasLower;
     }
-    // Function to check if an account number is valid (numeric and 6 digits)
-    bool isValidAccountNo(string accNo) {
-        if (accNo.length() != 6) return false;
-        for (int i = 0; i < accNo.length(); i++) {
-            if (!isdigit(accNo[i])) return false;
-        }
-        return true;
+
+    string accNo() {
+        static int accCounter = 100000;
+        accCounter++;
+        return to_string(accCounter);
     }
 
-    // Function to check if an account number already exists
     bool isAccountUnique(Bank accounts[], int totalAccounts, string accNo) {
         for (int i = 0; i < totalAccounts; i++) {
             if (accounts[i].account_no == accNo) {
@@ -160,42 +158,32 @@ public:
         cout << "Enter Name: ";
         cin.ignore(); // Clear input buffer
         getline(cin, name);
-
+    
         while (!isValidName(name)) {
             cout << COLOR_RED << "Invalid Name! Name should contain at least one uppercase and one lowercase letter and it cannot contain numbers.\n" << COLOR_RESET;
             cout << "Enter Name: ";
             getline(cin, name);
         }
-
-        bool validAccountNo = false;
-        while (!validAccountNo) {
-            cout << "Enter Account No (6 digits): ";
-            cin >> account_no;
-
-            if (!isValidAccountNo(account_no)) {
-                cout << COLOR_RED << "Invalid Account No! Account No must be 6 digits.\n" << COLOR_RESET;
-                cin.clear(); // Clear the error flag
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
-            } else if (!isAccountUnique(accounts, totalAccounts, account_no)) {
-                cout << COLOR_RED << "Account Number already exists! Enter a unique Account No: " << COLOR_RESET;
-            } else {
-                validAccountNo = true; // Valid and unique account number
-            }
-        }
-
+        string newAccNo;
+        do {
+            newAccNo = "B-"+ accNo() +"-2025";
+        } while (!isAccountUnique(accounts, totalAccounts, newAccNo));
+        account_no = newAccNo;
+        cout << "Your Account Number is " << account_no << endl;
+    
         cout << "Enter Initial Deposit: ";
         balance = getValidInputForDouble();
-
+    
         while (balance <= 0) {
             cout << COLOR_RED << "Invalid Amount! Initial Deposit must be a positive number.\n" << COLOR_RESET;
             cout << "Enter Initial Deposit: ";
             balance = getValidInputForDouble();
         }
-
+    
         password = setMaskedInput("Set Account Password (at least 6 characters): ", 6);
         pin = setMaskedInput("Set 4-digit Numeric PIN: ", 4);
         recoveryCode = setMaskedInput("Set Account Recovery Code (at least 6 characters): ", 6);
-
+    
         cout << COLOR_GREEN << "Account Created Successfully!\n" << COLOR_RESET;
         wait_for_keypress();
     }
@@ -211,7 +199,7 @@ public:
         cout << "Account No: " << account_no << endl;
         cout << "Balance: $" << balance << endl;
         cout << "Loan Amount: $" << loanAmount << endl;
-        cout << (frozen ? "Status: Frozen" : "Status: Active") << endl;
+        cout << "Status: " << (frozen ? "Frozen" : "Active") << endl; // Display status
         cout << "-------------------------\n";
         wait_for_keypress();
     }
@@ -222,11 +210,17 @@ public:
             wait_for_keypress();
             return false;
         }
-
+    
         string inputPIN = setMaskedInput("Enter 4-digit PIN: ", 4);
-
+    
+        if (inputPIN.length() != 4) {
+            cout << COLOR_RED << "PIN must be 4 digits!\n" << COLOR_RESET;
+            wait_for_keypress();
+            return false;
+        }
+    
         if (inputPIN == pin) {
-            failedLoginAttempts = 0; // Reset failed attempts on successful login
+            failedLoginAttempts = 0;
             return true;
         } else {
             failedLoginAttempts++;
@@ -278,21 +272,26 @@ public:
             wait_for_keypress();
             return;
         }
-
+    
         if (!verifyPIN()) return;
         if (amount > balance) {
             cout << COLOR_RED << "Insufficient Balance!\n" << COLOR_RESET;
             wait_for_keypress();
             return;
         }
-
+    
         string recipientAccNo;
         cout << "Enter Recipient Account No: ";
         cin >> recipientAccNo;
-
+    
         bool recipientFound = false;
         for (int i = 0; i < totalAccounts; i++) {
             if (accounts[i].account_no == recipientAccNo) {
+                if (accounts[i].frozen) {
+                    cout << COLOR_RED << "Recipient account is frozen!\n" << COLOR_RESET;
+                    wait_for_keypress();
+                    return;
+                }
                 balance -= amount;
                 accounts[i].balance += amount;
                 cout << COLOR_GREEN << "Amount Transferred Successfully. New Balance: $" << balance << COLOR_RESET << endl;
@@ -301,7 +300,7 @@ public:
                 break;
             }
         }
-
+    
         if (!recipientFound) {
             cout << COLOR_RED << "Recipient Account Not Found!\n" << COLOR_RESET;
             wait_for_keypress();
@@ -358,7 +357,7 @@ public:
     void closeAccount() {
         if (!verifyPIN()) return;
         string inputCode = setMaskedInput("Enter Recovery Code: ", 6);
-
+    
         if (inputCode == recoveryCode) {
             name = "";
             account_no = "";
@@ -366,7 +365,7 @@ public:
             password = "";
             pin = "";
             recoveryCode = "";
-            loanAmount = 0.0;
+            loanAmount = 0.0; 
             frozen = false;
             cout << COLOR_GREEN << "Account Closed Successfully!\n" << COLOR_RESET;
             wait_for_keypress();
@@ -414,6 +413,12 @@ public:
     }
 
     void calculateInterest(double rate) {
+        if (rate <= 0) {
+            cout << COLOR_RED << "Invalid interest rate!\n" << COLOR_RESET;
+            wait_for_keypress();
+            return;
+        }
+    
         if (balance > 0) {
             double interest = balance * rate / 100;
             balance += interest;
@@ -468,7 +473,7 @@ int main() {
     string adminAccessLevel;
 
     do {
-        system("clear");
+        system("cls");
         displayMainMenu();
         choice = getValidInputForInt();
 
@@ -790,10 +795,11 @@ int main() {
                             break;
                         }
                         case 3:
-                            isAdminLoggedIn = false;
-                            cout << COLOR_GREEN << "Admin logged out successfully!\n" << COLOR_RESET;
-                            wait_for_keypress();
-                            break;
+                                isAdminLoggedIn = false;
+                                adminAccessLevel = "";
+                                cout << COLOR_GREEN << "Admin logged out successfully!\n" << COLOR_RESET;
+                                wait_for_keypress();
+    break;
                         case 4:
                             break;
                         default:
