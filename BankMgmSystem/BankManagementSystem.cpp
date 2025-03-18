@@ -118,6 +118,73 @@ public:
     }
 
     // Function to set a masked password/PIN/recovery code
+    string setMaskedInputForPass(string prompt, int minLength , int maxLength) {
+        string input;
+        cout << prompt;
+        input = "";
+        char ch;
+        while ((ch = getch()) != '\r') { // Mask input
+            if (ch == '\b' && !input.empty()) { // Handle backspace
+                input.erase(input.length() - 1); // Remove the last character
+                cout << "\b \b"; // Move cursor back and erase the character
+            } else if (ch != '\b') {
+                input.push_back(ch); // Add the character to the input
+                cout << '*'; // Display '*' for each character
+            }
+        }
+        cout << endl;
+        while (input.length() < minLength||input.length()>maxLength ||input.find_first_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ") == -1 ||
+       input.find_first_of("abcdefghijklmnopqrstuvwxyz") == -1 ||
+       input.find_first_of("0123456789") == -1 ||
+       input.find_first_of("!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~") == -1) {
+        cout << COLOR_RED;
+    
+        if (input.length() < minLength || input.length() > maxLength) 
+            cout << "Error: Password must be between " << minLength << " and " << maxLength << " characters long!\n";
+            
+        if (input.find_first_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ") == -1)
+            cout << "Error: Password must contain at least one uppercase letter!\n";
+    
+        if (input.find_first_of("abcdefghijklmnopqrstuvwxyz") == -1)
+            cout << "Error: Password must contain at least one lowercase letter!\n";
+    
+        if (input.find_first_of("0123456789") == -1)
+            cout << "Error: Password must contain at least one digit!\n";
+    
+        if (input.find_first_of("!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~") == -1)
+            cout << "Error: Password must contain at least one special character!\n";
+    
+        cout << COLOR_RESET;
+            cout << prompt;
+            input = "";
+            while ((ch = getch()) != '\r') {
+                if (ch == '\b' && !input.empty()) {
+                    input.erase(input.length() - 1); // Remove the last character
+                    cout << "\b \b"; // Move cursor back and erase the character
+                } else if (ch != '\b') {
+                    input.push_back(ch); // Add the character to the input
+                    cout << '*'; // Display '*' for each character
+                }
+            }
+            cout << endl;
+        }
+        return input;
+ {
+            cout << COLOR_RED << "Input must be at least " << minLength << " characters long!\n" << COLOR_RESET;
+            cout << prompt;
+            input = "";
+            while ((ch = getch()) != '\r') {
+                if (ch == '\b' && !input.empty()) {
+                    input.erase(input.length() - 1); // Remove the last character
+                    cout << "\b \b"; // Move cursor back and erase the character
+                } else if (ch != '\b') {
+                    input.push_back(ch); // Add the character to the input
+                    cout << '*'; // Display '*' for each character
+                }
+            }
+            cout << endl;
+        }
+    }
     string setMaskedInput(string prompt, int minLength) {
         string input;
         cout << prompt;
@@ -133,9 +200,13 @@ public:
             }
         }
         cout << endl;
-
-        while (input.length() < minLength) {
-            cout << COLOR_RED << "Input must be at least " << minLength << " characters long!\n" << COLOR_RESET;
+        while (input.length() != minLength || input.find_first_not_of("0123456789") != -1){
+            cout << COLOR_RED;
+    if (input.length() != minLength)
+        cout << "Error: Input must be exactly " << minLength << " digits long!\n";
+    if (input.find_first_not_of("0123456789") != -1)
+        cout << "Error: Input must contain only numeric digits (0-9)!\n";
+    cout << COLOR_RESET;
             cout << prompt;
             input = "";
             while ((ch = getch()) != '\r') {
@@ -178,7 +249,7 @@ public:
             balance = getValidInputForDouble();
         }
     
-        password = setMaskedInput("Set Account Password (at least 6 characters): ", 6);
+        password = setMaskedInputForPass("Set Account Password (at least 8 characters): ", 8,16);
         pin = setMaskedInput("Set 4-digit Numeric PIN: ", 4);
         recoveryCode = setMaskedInput("Set Account Recovery Code (at least 6 characters): ", 6);
     
