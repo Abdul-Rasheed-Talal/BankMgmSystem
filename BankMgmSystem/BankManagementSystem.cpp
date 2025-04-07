@@ -2,6 +2,7 @@
 #include <string>
 #include <limits>
 #include <conio.h>
+#include <sstream> // Required for std::ostringstream
 #define COLOR_GREEN "\033[32m"
 #define COLOR_YELLOW "\033[33m"
 #define COLOR_RESET "\033[0m"
@@ -105,7 +106,9 @@ public:
     string accNo() {
         static int accCounter = 100000;
         accCounter++;
-        return to_string(accCounter);
+        std::ostringstream oss;
+        oss << accCounter;
+        return oss.str();
     }
 
     bool isAccountUnique(Bank accounts[], int totalAccounts, string accNo) {
